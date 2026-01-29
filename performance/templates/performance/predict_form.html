@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predict Marks</title>
+  <style>
+    :root {
+      --dark-blue: #0b1f3a;
+      --mid-blue: #1e3a8a;
+      --light-blue: #60a5fa;
+      --accent: #93c5fd;
+      --white: #ffffff;
+      --soft-white: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: linear-gradient(135deg, var(--dark-blue), var(--mid-blue));
+      color: var(--white);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 720px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      overflow: hidden;
+      backdrop-filter: blur(6px);
+    }
+    .header {
+      padding: 24px 28px;
+      background: linear-gradient(180deg, rgba(96,165,250,0.25), rgba(96,165,250,0.1));
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .title { margin: 0; font-size: 24px; font-weight: 700; }
+    .subtitle { margin: 6px 0 0; color: var(--accent); font-size: 14px; }
+
+    form { padding: 24px 28px; display: grid; gap: 16px; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+
+    .field { display: grid; gap: 8px; }
+    label { font-size: 13px; color: var(--accent); }
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(11,31,58,0.6);
+      color: var(--white);
+      outline: none;
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    input:focus, select:focus {
+      border-color: var(--light-blue);
+      box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+    }
+    .checkbox {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+      background: rgba(11,31,58,0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .actions { display: flex; gap: 12px; justify-content: flex-end; padding: 0 28px 24px; }
+    .btn {
+      appearance: none; border: none; cursor: pointer; padding: 12px 18px; border-radius: 999px; font-weight: 700;
+      transition: transform 0.06s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(180deg, var(--light-blue), #3b82f6);
+      color: var(--white);
+      box-shadow: 0 8px 20px rgba(59,130,246,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(59,130,246,0.45); }
+
+    .result {
+      margin: 0 28px 24px; padding: 16px 18px; border-radius: 12px;
+      background: rgba(96,165,250,0.12);
+      border: 1px solid rgba(96,165,250,0.35);
+      color: var(--soft-white);
+    }
+    .error { border-color: #fca5a5; background: rgba(239, 68, 68, 0.1); color: #fecaca; }
+    .footer { padding: 14px 28px 24px; color: rgba(255,255,255,0.7); font-size: 12px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1 class="title">Student Mark Predictor</h1>
+      <p class="subtitle">Enter your study habits to estimate your expected marks</p>
+    </div>
+
+    <form method="post" action="">
+      {% csrf_token %}
+      <div class="row">
+        <div class="field">
+          <label for="hours_studied">Hours Studied (per day)</label>
+          <input id="hours_studied" name="hours_studied" type="number" step="0.1" min="0" max="24" required value="{{ form_values.hours_studied|default:'' }}" />
+        </div>
+        <div class="field">
+          <label for="previous_scores">Previous Scores (0-100)</label>
+          <input id="previous_scores" name="previous_scores" type="number" step="0.1" min="0" max="100" required value="{{ form_values.previous_scores|default:'' }}" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="sleep_hours">Sleep Hours (per day)</label>
+          <input id="sleep_hours" name="sleep_hours" type="number" step="0.1" min="0" max="24" required value="{{ form_values.sleep_hours|default:'' }}" />
+        </div>
+        <div class="field">
+          <label for="sample_papers">Past Papers Solved (count)</label>
+          <input id="sample_papers" name="sample_papers" type="number" step="1" min="0" required value="{{ form_values.sample_papers|default:'' }}" />
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="checkbox">
+          <input id="extracurricular" name="extracurricular" type="checkbox" {% if form_values.extracurricular %}checked{% endif %} />
+          <label for="extracurricular" style="margin:0">Participates in Extracurricular Activities</label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Predict Marks</button>
+        <button class="btn btn-primary" type="reset">Reset Form</button>
+      </div>
+    </form>
+
+    {% if predicted_performance_index %}
+      <div class="result">
+        <strong>Predicted Marks:</strong> {{ predicted_performance_index }}
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="result error">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <div class="footer">
+      Made and trained by Joyeuse Iradukunda
+    </div>
+  </div>
+</body>
+</html>
